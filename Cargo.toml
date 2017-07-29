@@ -1,0 +1,27 @@
+[package]
+name = "vanal"
+version = "0.1.0"
+authors = ["Ada Rosa <t-adrosa@microsoft.com>"]
+
+[dependencies]
+itertools = "^0.6.1"
+stft = "^0.2.0"
+serde = "^1.0.11"
+rayon = "^0.8.2"
+prophet = "^0.3.0"
+
+# just for training
+hound = "^3.1.0"
+libflate = "^0.1"
+tar = "^0.4"
+
+# this is for debug purposes
+image = "^0.14.0"
+
+
+
+# useful libs that I am not using
+# rustfft = "^2.0.0"
+# rustdct = "^0.1.3"
+# goertzel="0.2.0"
+# dsp-chain = "0.13.1"

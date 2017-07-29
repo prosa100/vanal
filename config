@@ -1,0 +1,5 @@
+[profile.release]
+panic = 'abort'
+
+[build]
+rustflags = ["-C", "target-cpu=native"]
