@@ -109,6 +109,7 @@ pub fn  load_train_data() -> Box<Iterator<Item=TrainExample>>
         .unwrap()
         .flat_map(|path| {
             let path = path.unwrap().path(); // maybe i should use glob?
+            println!("{:?}", path);
             let file = fs::File::open(path).expect("Failed to load file.");
             load_voxforge(file)
         })
