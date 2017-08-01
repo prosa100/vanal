@@ -163,7 +163,7 @@ pub fn dump_train_data() {
      let file = fs::File::create("train.bin").expect("Failed to open output file.");
      let file = Encoder::new(file).expect("Somehow creating a compressor failed.");
      let file= Mutex::new( file);
-     let files:Vec<_> = fs::read_dir(VOICE_DATA_DIR).unwrap().take(3).collect();
+     let files:Vec<_> = fs::read_dir(VOICE_DATA_DIR).unwrap().collect();
      files.into_par_iter()
      .map(|path| {
         let path = path.unwrap().path(); // maybe i should use glob?
