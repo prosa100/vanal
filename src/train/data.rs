@@ -3,9 +3,15 @@ use std::collections::HashMap;
 use std::io;
 use std::io::prelude::*;
 use std::i16;
-use libflate::gzip::{Decoder,Encoder};
+use libflate::gzip::{Decoder, Encoder};
 use tar::Archive;
 use hound::WavReader;
+use std::fs;
+use spectrogram::FFTProcessor;
+use std::iter;
+use bincode::{serialize_into, Infinite};
+use rayon::iter::IntoParallelIterator; use rayon::prelude::*;
+use std::sync::Mutex;
 
 const README_NAME: &str = "README";
 const AUDIO_EXTENSION: &str = "wav";
@@ -97,10 +103,7 @@ pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
 //     println!("{}", data.len())
 // }
 
-use std::fs;
-use prophet::prelude::*;
-use spectrogram::FFTProcessor;
-use std::iter;
+
 
 const VOICE_DATA_DIR:&str = "/data/voice/voxforge";
 //const VOICE_DATA_DIR:&str = "./assets";
@@ -125,7 +128,7 @@ pub fn  load_train_data() -> Box<Iterator<Item=TrainExample>>
         }))
 }
 
-use bincode::{serialize_into, deserialize, Infinite};
+
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct TrainExample {
@@ -147,27 +150,29 @@ impl TrainExample{
         }
     }
 }
-use rayon::iter::IntoParallelIterator; use rayon::prelude::*;
+
 fn darkness((samples, gender):(Vec<f32>, GenderBinary))->Vec<TrainExample>{
     let mut stft = FFTProcessor::new();
     stft.process(samples.as_slice()).into_iter()
     .zip(iter::repeat(gender_as_vec(gender))).map(TrainExample::from).collect()
 }
-use std::sync::Mutex;
+
 
 pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
-    let file= Mutex::new( Encoder::new(fs::File::create("train.bin").unwrap()).expect("Somehow creating a compressor failed."));
-    let files = fs::read_dir(VOICE_DATA_DIR).unwrap();
-    files.collect::<Vec<_>>().into_par_iter()
-    .map(|path| {
+     let file = fs::File::create("train.bin").expect("Failed to open output file.");
+     let file = Encoder::new(file).expect("Somehow creating a compressor failed.");
+     let file= Mutex::new( file);
+     let files:Vec<_> = fs::read_dir(VOICE_DATA_DIR).unwrap().take(3).collect();
+     files.into_par_iter()
+     .map(|path| {
         let path = path.unwrap().path(); // maybe i should use glob?
         println!("{:?}", path);
         let mut out = Vec::new();
         let file = fs::File::open(path).expect("Failed to load file.");
         let file = load_voxforge(file);
         let file = file.into_iter();
-        for x in file.map(darkness){
+        for x in file.flat_map(darkness){
             serialize_into(&mut out, &x, Infinite).expect("Failed to serialize");
         }
         out
