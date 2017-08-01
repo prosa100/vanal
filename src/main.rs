@@ -21,9 +21,6 @@ pub mod train;
 pub mod spectrogram;
 
 
-// #[cfg(test)]
-// mod tests {
-//     #[test]
-//     fn it_works() {
-//     }
-// }
+pub fn main(){
+    train::data::dump_train_data();
+}

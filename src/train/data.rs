@@ -143,7 +143,6 @@ impl TrainExample{
     }
 }
 
-#[test]
 pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
 
