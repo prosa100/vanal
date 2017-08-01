@@ -103,10 +103,9 @@ use std::iter;
 fn gender_as_vec(gender:GenderBinary)->Vec<f32>{
    vec![gender as i16 as f32]
 }
-
 pub fn  load_train_data() -> Box<Iterator<Item=TrainExample>>
 {
-        Box::new(fs::read_dir("./assets")
+        Box::new(fs::read_dir("/data/voice/voxforge")
         .unwrap()
         .flat_map(|path| {
             let path = path.unwrap().path(); // maybe i should use glob?
@@ -146,11 +145,14 @@ impl TrainExample{
 
 #[test]
 pub fn dump_train_data() {
+     use std::time::Instant;    let now = Instant::now();
+
     let mut file = fs::File::create("train.bin").unwrap();
     //let mut file = Encoder::new(file).expect("Somehow creating a compressor failed.");
-    for first in load_train_data().take(10) {
-        serialize_into(&mut file, first, Infinite).expect("Failed to write");
+    for first in load_train_data() {
+        serialize_into(&mut file, &first, Infinite).expect("Failed to write");
     }
+    println!("{}s", now.elapsed().as_secs());
 }
 
 
@@ -158,8 +160,8 @@ pub fn dump_train_data() {
 fn train_data_load_all() {
     use std::time::Instant;
     let now = Instant::now();
-    load_train_data();
-    println!("{}s", now.elapsed().as_secs());
+    //load_train_data();
+    //println!("{}s", now.elapsed().as_secs());
 }
 
 // #[derive(Debug)]

@@ -1,7 +1,7 @@
 use prophet::prelude::*;
 use prophet::prelude::Activation::Tanh;
 
-fn train(){
+fn _train(){
     let (t, f)  = (1.0, -1.0);
     // static samples are easily generated with this macro!
     let train_samples = samples![
