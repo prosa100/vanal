@@ -4,6 +4,10 @@ extern crate serde_derive;
 #[macro_use]
 extern crate prophet;
 
+extern crate bincode;
+
+extern crate rayon; use rayon::prelude::*;
+
 extern crate hound;
 extern crate stft;
 extern crate libflate;
@@ -14,10 +18,7 @@ extern crate image;
 
 
 
-extern crate bincode;
 
-extern crate rayon;
-use rayon::prelude::*;
 
 pub mod train;
 pub mod spectrogram;

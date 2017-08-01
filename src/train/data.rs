@@ -101,9 +101,9 @@ use std::fs;
 use prophet::prelude::*;
 use spectrogram::FFTProcessor;
 use std::iter;
-use rayon::prelude::*;
-//const VOICE_DATA_DIR:&str = "/data/voice/voxforge";
-const VOICE_DATA_DIR:&str = "./assets";
+
+const VOICE_DATA_DIR:&str = "/data/voice/voxforge";
+//const VOICE_DATA_DIR:&str = "./assets";
 
 fn gender_as_vec(gender:GenderBinary)->Vec<f32>{
    vec![gender as i16 as f32]
@@ -147,13 +147,27 @@ impl TrainExample{
         }
     }
 }
-
+use rayon::iter::IntoParallelIterator; use rayon::prelude::*;
+fn darkness((samples, gender):(Vec<f32>, GenderBinary))->Vec<TrainExample>{
+    let mut stft = FFTProcessor::new();
+    stft.process(samples.as_slice()).into_iter()
+    .zip(iter::repeat(gender_as_vec(gender))).map(TrainExample::from).collect()
+}
 pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
 
-    let mut file = fs::File::create("train.bin").unwrap();
-    let mut file = Encoder::new(file).expect("Somehow creating a compressor failed.");
-    for first in load_train_data() {
+    let mut file = Encoder::new(fs::File::create("train.bin").unwrap()).expect("Somehow creating a compressor failed.");
+    let files = fs::read_dir(VOICE_DATA_DIR).unwrap();
+    let train_data = files
+    .flat_map(|path| {
+        let path = path.unwrap().path(); // maybe i should use glob?
+        println!("{:?}", path);
+        let file = fs::File::open(path).expect("Failed to load file.");
+        let file = load_voxforge(file);
+        let file = file.into_par_iter();
+        file.map(darkness).collect::<Vec<_>>()
+    });
+    for first in train_data {
         serialize_into(&mut file, &first, Infinite).expect("Failed to write");
     }
     println!("{}s", now.elapsed().as_secs());

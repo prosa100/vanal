@@ -15,7 +15,7 @@ hound = "^3.1.0"
 libflate = "^0.1"
 tar = "^0.4"
 
-bincode = "*"
+bincode = "^0.8.0"
 
 # this is for debug purposes
 image = "^0.14.0"
