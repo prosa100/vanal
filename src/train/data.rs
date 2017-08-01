@@ -29,7 +29,7 @@ where
     assert_eq!(num_channels, NUM_CHANNELS);
     assert_eq!(sample_rate, SAMPLE_RATE);
     let samples = reader.into_samples::<i16>();
-    let samples = samples.map(|x| x.unwrap() as f32 / i16::MAX as f32);
+    let samples = samples.map(|x| x.expect("parse fail") as f32 / i16::MAX as f32);
     samples.collect()
     //samples.chunks(num_channels).into_iter().map(|s|[s]).collect()
 }
@@ -39,6 +39,8 @@ const FEMALE_VAL_BOOL:bool = true;
 const MALE_VAL_BOOL:bool = false;
 
 type Gender = Option<GenderBinary>;
+
+
 
 pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
     let file = Decoder::new(file).unwrap();
@@ -57,7 +59,6 @@ pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
             if is_readme {
                 let mut s = String::new();
                 file.read_to_string(&mut s).expect("failed to read file in acrhive");
-
                 let config = s.split('\n')
                     .filter_map(|line| {
                         line.find(':').map(|i| {
@@ -67,7 +68,7 @@ pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
                         })
                     })
                     .collect::<HashMap<_, _>>();
-                gender = match *config.get("Gender").unwrap() {
+                gender = match *config.get("Gender").unwrap_or(&"") {
                     "Male" => Some(MALE_VAL_BOOL),
                     "Female" => Some(FEMALE_VAL_BOOL),
                     _ => None,
@@ -100,13 +101,16 @@ use std::fs;
 use prophet::prelude::*;
 use spectrogram::FFTProcessor;
 use std::iter;
+use rayon::prelude::*;
+//const VOICE_DATA_DIR:&str = "/data/voice/voxforge";
+const VOICE_DATA_DIR:&str = "./assets";
+
 fn gender_as_vec(gender:GenderBinary)->Vec<f32>{
    vec![gender as i16 as f32]
 }
 pub fn  load_train_data() -> Box<Iterator<Item=TrainExample>>
 {
-        Box::new(fs::read_dir("/data/voice/voxforge")
-        .unwrap()
+        Box::new(fs::read_dir(VOICE_DATA_DIR).unwrap()
         .flat_map(|path| {
             let path = path.unwrap().path(); // maybe i should use glob?
             println!("{:?}", path);
@@ -148,7 +152,7 @@ pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
 
     let mut file = fs::File::create("train.bin").unwrap();
-    //let mut file = Encoder::new(file).expect("Somehow creating a compressor failed.");
+    let mut file = Encoder::new(file).expect("Somehow creating a compressor failed.");
     for first in load_train_data() {
         serialize_into(&mut file, &first, Infinite).expect("Failed to write");
     }

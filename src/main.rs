@@ -16,6 +16,8 @@ extern crate image;
 
 extern crate bincode;
 
+extern crate rayon;
+use rayon::prelude::*;
 
 pub mod train;
 pub mod spectrogram;
