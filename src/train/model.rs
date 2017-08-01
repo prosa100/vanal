@@ -38,7 +38,7 @@ use bincode::{deserialize_from, Infinite};
 use train::data::TrainExample;
 
 pub fn _load_train_data(){
-    let mut file =fs::File::open("train.bin").expect("Failed to open train data dump.");
+    let file =fs::File::open("train.bin").expect("Failed to open train data dump.");
     let mut file = Decoder::new(file).unwrap();
     while let Ok(data) = deserialize_from(&mut file, Infinite){
         let data: TrainExample = data;
