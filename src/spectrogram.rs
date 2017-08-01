@@ -4,9 +4,9 @@ use stft::{WindowType, STFT};
 use image;
 const WINDOW_SIZE: usize = 1024;
 const STEP_SIZE: usize = 512;
-const SPECTROGRAM_WIDTH: usize = WINDOW_SIZE / 2;
+pub const SPECTROGRAM_WIDTH: usize = WINDOW_SIZE / 2;
 
-type TSample = f64;
+type TSample = f32;
 
 pub struct FFTProcessor {
     stft: STFT<TSample>
@@ -19,11 +19,17 @@ impl fmt::Debug for FFTProcessor{
 }
 
 impl FFTProcessor {
-    pub fn process(&mut self, data: &[TSample]) -> Vec<TSample>{
-        assert_eq!(data.len(), STEP_SIZE);
+    pub fn process(&mut self, data: &[TSample]) -> Vec<Vec<TSample>>{
         self.stft.append_samples(data);
-        let mut out = vec![0.0; SPECTROGRAM_WIDTH];
-        self.stft.compute_column(&mut out);
+        let mut out = vec![];
+
+        
+        while self.stft.contains_enough_to_compute() {
+            let mut specdata_buffer = vec![0.0; SPECTROGRAM_WIDTH];
+            self.stft.compute_column(&mut specdata_buffer);
+            out.push(specdata_buffer);
+            self.stft.move_to_next_column();
+        }
         out
     }
     pub fn new() -> FFTProcessor {
@@ -42,7 +48,7 @@ pub fn colorize_sample(s:TSample) -> u8{
 
 pub fn draw(samples: &[TSample], _sample_rate: usize) {
     let mut stft = FFTProcessor::new();
-    let image_data = samples.chunks(STEP_SIZE).map(|chunk|stft.process(chunk)).flat_map(|spectra| {
+    let image_data = stft.process(samples).into_iter().flat_map(|spectra| {
          spectra.into_iter().map(colorize_sample)
     }).collect::<Vec<_>>();
     let image_lines = samples.len() / STEP_SIZE;

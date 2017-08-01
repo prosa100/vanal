@@ -15,8 +15,12 @@ hound = "^3.1.0"
 libflate = "^0.1"
 tar = "^0.4"
 
+bincode = "*"
+
 # this is for debug purposes
 image = "^0.14.0"
+
+serde_derive = "^1.0"
 
 
 
