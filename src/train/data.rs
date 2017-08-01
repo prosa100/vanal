@@ -153,23 +153,29 @@ fn darkness((samples, gender):(Vec<f32>, GenderBinary))->Vec<TrainExample>{
     stft.process(samples.as_slice()).into_iter()
     .zip(iter::repeat(gender_as_vec(gender))).map(TrainExample::from).collect()
 }
+use std::sync::Mutex;
+
 pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
-
-    let mut file = Encoder::new(fs::File::create("train.bin").unwrap()).expect("Somehow creating a compressor failed.");
+    let file= Mutex::new( Encoder::new(fs::File::create("train.bin").unwrap()).expect("Somehow creating a compressor failed."));
     let files = fs::read_dir(VOICE_DATA_DIR).unwrap();
-    let train_data = files
-    .flat_map(|path| {
+    files.collect::<Vec<_>>().into_par_iter()
+    .map(|path| {
         let path = path.unwrap().path(); // maybe i should use glob?
         println!("{:?}", path);
+        let mut out = Vec::new();
         let file = fs::File::open(path).expect("Failed to load file.");
         let file = load_voxforge(file);
-        let file = file.into_par_iter();
-        file.map(darkness).collect::<Vec<_>>()
+        let file = file.into_iter();
+        for x in file.map(darkness){
+            serialize_into(&mut out, &x, Infinite).expect("Failed to serialize");
+        }
+        out
+    })
+    .for_each(|first|{
+        let mut file = file.lock().unwrap();
+        (&mut *file).write_all(first.as_slice()).expect("Failed to write");
     });
-    for first in train_data {
-        serialize_into(&mut file, &first, Infinite).expect("Failed to write");
-    }
     println!("{}s", now.elapsed().as_secs());
 }
 
