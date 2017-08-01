@@ -48,7 +48,7 @@ pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
     let mut gender = None;
     let samples = archive
         .entries()
-        .unwrap()
+        .expect("archive is bad")
         .filter_map(|file| {
             let mut file = file.unwrap();
             let path = file.header().path().unwrap().into_owned();
@@ -56,7 +56,7 @@ pub fn load_voxforge<R: io::Read>(file: R) -> Vec<(Vec<f32>, GenderBinary)> {
             let is_soundfile = path.extension().map_or(false, |x| x.eq(AUDIO_EXTENSION));
             if is_readme {
                 let mut s = String::new();
-                file.read_to_string(&mut s).unwrap();
+                file.read_to_string(&mut s).expect("failed to read file in acrhive");
 
                 let config = s.split('\n')
                     .filter_map(|line| {
