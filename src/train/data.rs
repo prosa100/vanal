@@ -9,7 +9,6 @@ use hound::WavReader;
 use std::fs;
 use spectrogram::FFTProcessor;
 use std::iter;
-use bincode::{serialize_into, Infinite};
 use rayon::iter::IntoParallelIterator; use rayon::prelude::*;
 use std::sync::Mutex;
 
@@ -130,7 +129,6 @@ pub fn  load_train_data() -> Box<Iterator<Item=TrainExample>>
 
 
 
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct TrainExample {
     pub features: Vec<f32>,
     pub label: Vec<f32>
@@ -157,6 +155,7 @@ fn darkness((samples, gender):(Vec<f32>, GenderBinary))->Vec<TrainExample>{
     .zip(iter::repeat(gender_as_vec(gender))).map(TrainExample::from).collect()
 }
 
+use byteorder::{LittleEndian,WriteBytesExt};
 
 pub fn dump_train_data() {
      use std::time::Instant;    let now = Instant::now();
@@ -168,12 +167,14 @@ pub fn dump_train_data() {
      .map(|path| {
         let path = path.unwrap().path(); // maybe i should use glob?
         println!("{:?}", path);
-        let mut out = Vec::new();
+        let mut out:Vec<u8> = Vec::new();
         let file = fs::File::open(path).expect("Failed to load file.");
         let file = load_voxforge(file);
         let file = file.into_iter();
         for x in file.flat_map(darkness){
-            serialize_into(&mut out, &x, Infinite).expect("Failed to serialize");
+           for f in x.features {
+               out.write_f32::<LittleEndian>(f).unwrap();
+           }
         }
         out
     })
